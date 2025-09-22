@@ -1,16 +1,80 @@
 import 'package:card_reader/components/details_form.dart';
 import 'package:card_reader/components/scan_camera.dart';
+import 'package:card_reader/models/credit_card.dart';
+import 'package:card_reader/providers/credit_card_provider.dart';
+import 'package:card_reader/screens/saved_cards_page.dart';
+import 'package:card_reader/utils/country_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
+  @override 
+  void initState() {
+    super.initState();
+    // Load cards when the app starts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(creditCardsProvider.notifier).loadCards();
+    });
+  }
+
+  void _handleScannedCard(Map<String, dynamic>? cardData) async {
+    if (cardData != null) {
+      final cardNumber = cardData['cardNumber'] as String;
+      final cardType = cardData['cardType'] as String;
+      final country = cardData['country'] as String;
+      final cvv = cardData['cvv'] as String;
+      
+      // Check if card already exists
+      final cardExists = await ref.read(creditCardsProvider.notifier).doesCardExist(cardNumber);
+      if (cardExists) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('This card has already been saved')),
+          );
+        }
+        return;
+      }
+      
+      // Check if country is banned
+      if (isCountryBanned(country)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Cards from $country are not accepted')),
+          );
+        }
+        return;
+      }
+      
+      // Create new card
+      final newCard = CreditCard(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        cardNumber: cardNumber,
+        cardType: cardType,
+        cvv: cvv,
+        issuingCountry: country,
+        createdAt: DateTime.now(),
+      );
+
+      // Add card using provider
+      ref.read(creditCardsProvider.notifier).addCard(newCard);
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Card saved successfully')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -22,73 +86,37 @@ class _HomePageState extends State<HomePage> {
           actions: <Widget>[
             //IconButton
             IconButton(
-              icon: const Icon(Icons.settings),
-              tooltip: 'Setting Icon',
-              onPressed: () {},
+              icon: const Icon(Icons.credit_card),
+              onPressed: () {
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => const SavedCardsPage(),
+                  ),
+                );
+              },
             ),
           ],
           backgroundColor: Colors.blue[800],
           foregroundColor: Colors.white,
           elevation: 50.0,
-          // Right Side
-          leading: Builder(
-            builder: (context) {
-              return IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-              );
-            },
-          ),
-          systemOverlayStyle: SystemUiOverlayStyle.light,
+          systemOverlayStyle: SystemUiOverlayStyle.dark,
 
           bottom: const TabBar(
             indicatorColor: Colors.white,
-            unselectedLabelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
             labelColor: Colors.white,
             tabs: [
-              Tab(icon: Icon(Icons.email)),
-              Tab(icon: Icon(Icons.camera_alt)),
+              Tab(icon: Icon(Icons.edit), text: "Manual Entry"),
+              Tab(icon: Icon(Icons.camera_alt), text: "Scan Card"),
             ],
-          ), // TabBar
+          ),// TabBar
         ), // AppBar
 
-        drawer: Drawer(
-          child: ListView(
-            children: <Widget>[
-              ListTile(
-                leading: Icon(Icons.home),
-                title: Text('Home'),
-                onTap: () {
-                  // Handle tap for Home
-                  print('Home tapped');
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.settings),
-                title: Text('Settings'),
-                onTap: () {
-                  // Handle tap for Settings
-                  print('Settings tapped');
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.info),
-                title: Text('About'),
-                onTap: () {
-                  // Handle tap for About
-                  print('About tapped');
-                },
-              ),
-            ],
-          ),
-        ),
-
-        body: const TabBarView(
+        body: TabBarView(
           children: [
             DetailsForm(), // The Details form
-            ScanCamera(), // The Camera scan
+            ScanCamera(onCardScanned: _handleScannedCard), // The Camera scan
           ],
         ), // TabBarView
       ), // Scaffold
