@@ -19,6 +19,7 @@ class _CardScannerState extends State<CardScanner> {
   bool _isInitialized = false;
   bool _isScanning = false;
   String _scannedText = '';
+  String _lastCardNumber = '';
 
   @override
   void initState() {
@@ -27,15 +28,21 @@ class _CardScannerState extends State<CardScanner> {
   }
 
   Future<void> _initializeCamera() async {
-    _cameras = await availableCameras();
-    _controller = CameraController(_cameras[0], ResolutionPreset.medium);
-    await _controller!.initialize();
-    setState(() => _isInitialized = true);
-    _startScanning();
+    try {
+      _cameras = await availableCameras();
+      _controller = CameraController(_cameras[0], ResolutionPreset.high);
+      await _controller!.initialize();
+      if (mounted) {
+        setState(() => _isInitialized = true);
+      }
+      _startScanning();
+    } catch (e) {
+      debugPrint("Camera initialization error: $e");
+    }
   }
 
   void _startScanning() {
-    Timer.periodic(const Duration(seconds: 2), (timer) async {
+    Timer.periodic(const Duration(seconds: 3), (timer) async {
       if (_isScanning || !mounted) return;
 
       _isScanning = true;
@@ -51,31 +58,70 @@ class _CardScannerState extends State<CardScanner> {
   }
 
   Future<void> _processImage(File imageFile) async {
-    final textRecognizer = TextRecognizer();
-    final inputImage = InputImage.fromFile(imageFile);
-    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+    try {
+      final textRecognizer = TextRecognizer();
+      final inputImage = InputImage.fromFile(imageFile);
+      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
 
-    String fullText = recognizedText.text;
-    setState(() => _scannedText = fullText);
+      String fullText = recognizedText.text;
+      String cardNumber = _extractCardNumber(fullText);
+      
+      if (mounted) {
+        setState(() {
+          _scannedText = fullText;
+        });
+      }
 
-    // Extract card number
-    final cardNumber = _extractCardNumber(fullText);
-    if (cardNumber.isNotEmpty) {
-      widget.onCardScanned(cardNumber, fullText);
+      // Only trigger callback if we found a new card number
+      if (cardNumber.isNotEmpty && cardNumber != _lastCardNumber) {
+        _lastCardNumber = cardNumber;
+        widget.onCardScanned(cardNumber, fullText);
+      }
+
+      textRecognizer.close();
+    } catch (e) {
+      debugPrint("Error processing image: $e");
     }
-
-    textRecognizer.close();
   }
 
   String _extractCardNumber(String text) {
-    // Remove all non-digit characters
-    String cleaned = text.replaceAll(RegExp(r'\D'), '');
+    // Improved card number extraction
+    String cleaned = text.replaceAll(RegExp(r'\s+'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'\D'), '');
     
-    // Look for sequences of 13-19 digits (valid card number lengths)
+    // Look for valid card number sequences
     RegExp cardPattern = RegExp(r'\b\d{13,19}\b');
     Match? match = cardPattern.firstMatch(cleaned);
     
-    return match?.group(0) ?? '';
+    String potentialNumber = match?.group(0) ?? '';
+    
+    // Basic Luhn check for better accuracy
+    if (potentialNumber.isNotEmpty && _isValidLuhn(potentialNumber)) {
+      return potentialNumber;
+    }
+    
+    return '';
+  }
+
+  bool _isValidLuhn(String number) {
+    int sum = 0;
+    bool alternate = false;
+    
+    for (int i = number.length - 1; i >= 0; i--) {
+      int digit = int.parse(number[i]);
+      
+      if (alternate) {
+        digit *= 2;
+        if (digit > 9) {
+          digit = (digit % 10) + 1;
+        }
+      }
+      
+      sum += digit;
+      alternate = !alternate;
+    }
+    
+    return (sum % 10) == 0;
   }
 
   @override
@@ -87,29 +133,95 @@ class _CardScannerState extends State<CardScanner> {
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return Stack(
-      children: [
-        CameraPreview(_controller!),
-        Positioned(
-          bottom: 20,
-          left: 0,
-          right: 0,
-          child: Container(
-            color: Colors.black54,
-            padding: const EdgeInsets.all(8),
-            child: Text(
-              _scannedText.isNotEmpty 
-                ? 'Detected: $_scannedText' 
-                : 'Position card in frame...',
-              style: const TextStyle(color: Colors.white),
-              textAlign: TextAlign.center,
-            ),
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 20),
+              const Text('Initializing camera...'),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _initializeCamera,
+                child: const Text('Retry Camera'),
+              ),
+            ],
           ),
         ),
-      ],
+      );
+    }
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          CameraPreview(_controller!),
+          
+          // Camera overlay with guide
+          Positioned(
+            top: 100,
+            left: 50,
+            right: 50,
+            child: Container(
+              height: 200,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white, width: 2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.credit_card, size: 50, color: Colors.white.withOpacity(0.7)),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Position card in frame',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Status display
+          Positioned(
+            bottom: 20,
+            left: 0,
+            right: 0,
+            child: Container(
+              color: Colors.black54,
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  if (_scannedText.isNotEmpty) ...[
+                    const Text(
+                      'Detected Text:',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _scannedText.length > 100 
+                          ? '${_scannedText.substring(0, 100)}...' 
+                          : _scannedText,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ] else ...[
+                    const Text(
+                      'Scanning... Ensure good lighting and clear text',
+                      style: TextStyle(color: Colors.white),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                  if (_isScanning) ...[
+                    const SizedBox(height: 8),
+                    const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

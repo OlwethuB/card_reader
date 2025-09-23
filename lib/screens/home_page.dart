@@ -16,7 +16,7 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  @override 
+  @override
   void initState() {
     super.initState();
     // Load cards when the app starts
@@ -31,9 +31,14 @@ class _HomePageState extends ConsumerState<HomePage> {
       final cardType = cardData['cardType'] as String;
       final country = cardData['country'] as String;
       final cvv = cardData['cvv'] as String;
-      
+      final expiryMonth = cardData['expiryMonth'] as String; 
+      final expiryYear = cardData['expiryYear'] as String; 
+      final cardHolder = cardData['cardHolder'] as String; 
+
       // Check if card already exists
-      final cardExists = await ref.read(creditCardsProvider.notifier).doesCardExist(cardNumber);
+      final cardExists = await ref
+          .read(creditCardsProvider.notifier)
+          .doesCardExist(cardNumber);
       if (cardExists) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -42,7 +47,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         }
         return;
       }
-      
+
       // Check if country is banned
       if (isCountryBanned(country)) {
         if (mounted) {
@@ -52,8 +57,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         }
         return;
       }
-      
-      // Create new card
+
+      // Create new card with all fields
       final newCard = CreditCard(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         cardNumber: cardNumber,
@@ -61,6 +66,9 @@ class _HomePageState extends ConsumerState<HomePage> {
         cvv: cvv,
         issuingCountry: country,
         createdAt: DateTime.now(),
+        cardHolder: cardHolder,
+        expiryMonth: expiryMonth,
+        expiryYear: expiryYear,
       );
 
       // Add card using provider
@@ -89,7 +97,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               icon: const Icon(Icons.credit_card),
               onPressed: () {
                 Navigator.push(
-                  context, 
+                  context,
                   MaterialPageRoute(
                     builder: (context) => const SavedCardsPage(),
                   ),
@@ -110,7 +118,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               Tab(icon: Icon(Icons.edit), text: "Manual Entry"),
               Tab(icon: Icon(Icons.camera_alt), text: "Scan Card"),
             ],
-          ),// TabBar
+          ), // TabBar
         ), // AppBar
 
         body: TabBarView(

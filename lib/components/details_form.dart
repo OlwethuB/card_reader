@@ -3,6 +3,7 @@ import 'package:card_reader/providers/credit_card_provider.dart';
 import 'package:card_reader/utils/card_utils.dart';
 import 'package:card_reader/utils/country_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DetailsForm extends ConsumerStatefulWidget {
@@ -18,6 +19,9 @@ class _DetailsFormState extends ConsumerState<DetailsForm> {
   final TextEditingController _cardTypeController = TextEditingController();
   final TextEditingController _cvvController = TextEditingController();
   final TextEditingController _countryController = TextEditingController();
+  final TextEditingController _cardHolderController = TextEditingController();
+  final TextEditingController _expiryMonthController = TextEditingController();
+  final TextEditingController _expiryYearController = TextEditingController();
 
   void _inferCardType() {
     final cardNumber = _cardNumberController.text;
@@ -33,6 +37,9 @@ class _DetailsFormState extends ConsumerState<DetailsForm> {
       final cardType = _cardTypeController.text;
       final cvv = _cvvController.text;
       final country = _countryController.text;
+      final cardHolder = _cardHolderController.text;
+      final expiryMonth = _expiryMonthController.text;
+      final expiryYear = _expiryYearController.text;
 
       // Check if country is banned
       if (isCountryBanned(country)) {
@@ -44,14 +51,16 @@ class _DetailsFormState extends ConsumerState<DetailsForm> {
 
       // Check if card number is valid
       if (!isValidCardNumber(cardNumber)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid card number')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Invalid card number')));
         return;
       }
 
       // Check if card already exists
-      final cardExists = await ref.read(creditCardsProvider.notifier).doesCardExist(cardNumber);
+      final cardExists = await ref
+          .read(creditCardsProvider.notifier)
+          .doesCardExist(cardNumber);
       if (cardExists) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('This card has already been saved')),
@@ -67,15 +76,18 @@ class _DetailsFormState extends ConsumerState<DetailsForm> {
         cvv: cvv,
         issuingCountry: country,
         createdAt: DateTime.now(),
+        cardHolder: cardHolder,
+        expiryMonth: expiryMonth,
+        expiryYear: expiryYear,
       );
 
       // Add card using provider
       ref.read(creditCardsProvider.notifier).addCard(newCard);
 
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Card saved successfully')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Card saved successfully')));
 
       // Reset form
       _formKey.currentState!.reset();
@@ -122,6 +134,81 @@ class _DetailsFormState extends ConsumerState<DetailsForm> {
                 }
                 return null;
               },
+            ),
+            const SizedBox(height: 16),
+            // Card Holder Field
+            TextFormField(
+              controller: _cardHolderController,
+              decoration: const InputDecoration(
+                labelText: 'Card Holder Name',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter card holder name';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Expiry Date Fields
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: _expiryMonthController,
+                    decoration: const InputDecoration(
+                      labelText: 'MM',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(2),
+                    ],
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Month required';
+                      }
+                      int month = int.tryParse(value) ?? 0;
+                      if (month < 1 || month > 12) {
+                        return 'Invalid month';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text('/', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 3,
+                  child: TextFormField(
+                    controller: _expiryYearController,
+                    decoration: const InputDecoration(
+                      labelText: 'YYYY',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(4),
+                    ],
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Year required';
+                      }
+                      int year = int.tryParse(value) ?? 0;
+                      if (year < DateTime.now().year) {
+                        return 'Card expired';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 18),
             TextFormField(
