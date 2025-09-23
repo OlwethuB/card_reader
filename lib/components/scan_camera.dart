@@ -246,7 +246,8 @@ class _ScanCameraState extends State<ScanCamera> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                'Scan credit card using camera or select from gallery',
+                'Select a card to scan from the gallery',
+                // 'Scan credit card using camera or select from gallery',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
@@ -373,17 +374,17 @@ class _ScanCameraState extends State<ScanCamera> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.camera_alt),
-                      label: const Text('Camera'),
-                      onPressed: () => setState(() => _showScanner = true),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(150, 50),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                        shape: RoundedRectangleBorder( borderRadius: BorderRadius.circular(6), ),
-                      ),
-                    ),
+                    // ElevatedButton.icon(
+                    //   icon: const Icon(Icons.camera_alt),
+                    //   label: const Text('Camera'),
+                    //   onPressed: () => setState(() => _showScanner = true),
+                    //   style: ElevatedButton.styleFrom(
+                    //     minimumSize: const Size(150, 50),
+                    //     padding: const EdgeInsets.symmetric(vertical: 16),
+                    //     textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    //     shape: RoundedRectangleBorder( borderRadius: BorderRadius.circular(6), ),
+                    //   ),
+                    // ),
                     const SizedBox(width: 16),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.photo_library),
