@@ -1,3 +1,6 @@
+import 'package:card_reader/components/shared/action_button.dart';
+import 'package:card_reader/components/shared/card_input_field.dart';
+import 'package:card_reader/components/shared/expiry_date_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -43,6 +46,26 @@ class _CardPreviewState extends State<CardPreview> {
     _cardHolderController.text = widget.cardHolder;
   }
 
+  void _handleSave() {
+    if (_countryController.text.isNotEmpty &&
+        (_cvvController.text.length == 3 || _cvvController.text.length == 4) &&
+        _expiryMonthController.text.isNotEmpty &&
+        _expiryYearController.text.isNotEmpty &&
+        _cardHolderController.text.isNotEmpty) {
+      widget.onSave(
+        _countryController.text,
+        _cvvController.text,
+        _expiryMonthController.text,
+        _expiryYearController.text,
+        _cardHolderController.text,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all required fields')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -73,90 +96,45 @@ class _CardPreviewState extends State<CardPreview> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Card Number
-                TextFormField(
+                CardInputField(
                   initialValue: widget.cardNumber,
+                  labelText: 'Card Number',
+                  prefixIcon: Icons.credit_card,
                   readOnly: true,
                   enabled: false,
-                  decoration: const InputDecoration(
-                    labelText: 'Card Number',
-                    prefixIcon: Icon(Icons.credit_card),
-                    border: OutlineInputBorder(),
-                  ),
                 ),
                 const SizedBox(height: 16),
 
                 // Card Type
-                TextFormField(
+                CardInputField(
                   initialValue: widget.cardType,
+                  labelText: 'Card Type',
+                  prefixIcon: Icons.category,
                   readOnly: true,
                   enabled: false,
-                  decoration: const InputDecoration(
-                    labelText: 'Card Type',
-                    prefixIcon: Icon(Icons.category),
-                    border: OutlineInputBorder(),
-                  ),
                 ),
                 const SizedBox(height: 24),
 
                 // Card Holder
-                TextFormField(
+                CardInputField(
                   controller: _cardHolderController,
-                  decoration: const InputDecoration(
-                    labelText: 'Card Holder Name',
-                    prefixIcon: Icon(Icons.person_outline),
-                    border: OutlineInputBorder(),
-                  ),
+                  labelText: 'Card Holder Name',
+                  prefixIcon: Icons.person_outline,
                 ),
                 const SizedBox(height: 16),
 
-                // Expiry Date Row
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: TextFormField(
-                        controller: _expiryMonthController,
-                        decoration: const InputDecoration(
-                          labelText: 'MM',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(2),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('/', style: TextStyle(fontSize: 18)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      flex: 3,
-                      child: TextFormField(
-                        controller: _expiryYearController,
-                        decoration: const InputDecoration(
-                          labelText: 'YYYY',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(4),
-                        ],
-                      ),
-                    ),
-                  ],
+                // Expiry Date
+                ExpiryDateInput(
+                  monthController: _expiryMonthController,
+                  yearController: _expiryYearController,
                 ),
                 const SizedBox(height: 16),
 
                 // CVV
-                TextFormField(
+                CardInputField(
                   controller: _cvvController,
-                  decoration: const InputDecoration(
-                    labelText: 'CVV',
-                    prefixIcon: Icon(Icons.lock_outline),
-                    border: OutlineInputBorder(),
-                  ),
+                  labelText: 'CVV',
+                  prefixIcon: Icons.lock_outline,
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
@@ -166,13 +144,10 @@ class _CardPreviewState extends State<CardPreview> {
                 const SizedBox(height: 16),
 
                 // Issuing Country
-                TextFormField(
+                CardInputField(
                   controller: _countryController,
-                  decoration: const InputDecoration(
-                    labelText: 'Issuing Country',
-                    prefixIcon: Icon(Icons.public),
-                    border: OutlineInputBorder(),
-                  ),
+                  labelText: 'Issuing Country',
+                  prefixIcon: Icons.public,
                 ),
               ],
             ),
@@ -183,48 +158,18 @@ class _CardPreviewState extends State<CardPreview> {
           // Action buttons
           Row(
             children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    if (_countryController.text.isNotEmpty &&
-                        (_cvvController.text.length == 3 || _cvvController.text.length == 4) &&
-                        _expiryMonthController.text.isNotEmpty &&
-                        _expiryYearController.text.isNotEmpty &&
-                        _cardHolderController.text.isNotEmpty) {
-                      widget.onSave(
-                        _countryController.text,
-                        _cvvController.text,
-                        _expiryMonthController.text,
-                        _expiryYearController.text,
-                        _cardHolderController.text,
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please fill all required fields')),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.save),
-                  label: const Text("Save Card"),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                    shape: RoundedRectangleBorder( borderRadius: BorderRadius.circular(6), ),
-                  ),
-                ),
+              ActionButton(
+                onPressed: _handleSave,
+                label: "Save Card",
+                icon: Icons.save,
+                isPrimary: true,
               ),
               const SizedBox(width: 16),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: widget.onRescan,
-                  icon: const Icon(Icons.camera_alt_outlined),
-                  label: const Text("Rescan"),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: BorderSide(color: Theme.of(context).colorScheme.primary),
-                    shape: RoundedRectangleBorder( borderRadius: BorderRadius.circular(6), ),
-                  ),
-                ),
+              ActionButton(
+                onPressed: widget.onRescan,
+                label: "Rescan",
+                icon: Icons.camera_alt_outlined,
+                isPrimary: false,
               ),
             ],
           ),

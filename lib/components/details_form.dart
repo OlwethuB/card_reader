@@ -1,3 +1,6 @@
+import 'package:card_reader/components/shared/action_button.dart';
+import 'package:card_reader/components/shared/card_input_field.dart';
+import 'package:card_reader/components/shared/expiry_date_input.dart';
 import 'package:card_reader/models/credit_card.dart';
 import 'package:card_reader/providers/credit_card_provider.dart';
 import 'package:card_reader/utils/card_utils.dart';
@@ -85,6 +88,17 @@ class _DetailsFormState extends ConsumerState<DetailsForm> {
     }
   }
 
+  void _resetForm() {
+    _formKey.currentState!.reset();
+    _cardNumberController.clear();
+    _cardTypeController.clear();
+    _cvvController.clear();
+    _countryController.clear();
+    _cardHolderController.clear();
+    _expiryMonthController.clear();
+    _expiryYearController.clear();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -105,23 +119,14 @@ class _DetailsFormState extends ConsumerState<DetailsForm> {
                 color: Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey.shade300),
-                // boxShadow: [
-                //   BoxShadow(
-                //     color: Colors.grey.withOpacity(0.05),
-                //     blurRadius: 10,
-                //     spreadRadius: 2,
-                //   ),
-                // ],
               ),
               child: Column(
                 children: [
-                  TextFormField(
+                  // Card Number Field
+                  CardInputField(
                     controller: _cardNumberController,
-                    decoration: const InputDecoration(
-                      labelText: 'Card Number',
-                      prefixIcon: Icon(Icons.credit_card),
-                      border: OutlineInputBorder(),
-                    ),
+                    labelText: 'Card Number',
+                    prefixIcon: Icons.credit_card,
                     keyboardType: TextInputType.number,
                     onChanged: (_) => _inferCardType(),
                     validator: (value) {
@@ -132,89 +137,39 @@ class _DetailsFormState extends ConsumerState<DetailsForm> {
                   ),
                   const SizedBox(height: 16),
 
-                  TextFormField(
+                  // Card Type Field
+                  CardInputField(
                     controller: _cardTypeController,
-                    decoration: const InputDecoration(
-                      labelText: 'Card Type',
-                      prefixIcon: Icon(Icons.category),
-                      border: OutlineInputBorder(),
-                    ),
+                    labelText: 'Card Type',
+                    prefixIcon: Icons.category,
                     readOnly: true,
                     validator: (value) =>
                         (value == null || value.isEmpty) ? 'Card type could not be determined' : null,
                   ),
                   const SizedBox(height: 16),
 
-                  TextFormField(
+                  // Card Holder Field
+                  CardInputField(
                     controller: _cardHolderController,
-                    decoration: const InputDecoration(
-                      labelText: 'Card Holder Name',
-                      prefixIcon: Icon(Icons.person_outline),
-                      border: OutlineInputBorder(),
-                    ),
+                    labelText: 'Card Holder Name',
+                    prefixIcon: Icons.person_outline,
                     validator: (value) =>
                         (value == null || value.isEmpty) ? 'Please enter card holder name' : null,
                   ),
                   const SizedBox(height: 16),
 
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: TextFormField(
-                          controller: _expiryMonthController,
-                          decoration: const InputDecoration(
-                            labelText: 'MM',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(2),
-                          ],
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Month required';
-                            int month = int.tryParse(value) ?? 0;
-                            if (month < 1 || month > 12) return 'Invalid month';
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('/', style: TextStyle(fontSize: 18)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 3,
-                        child: TextFormField(
-                          controller: _expiryYearController,
-                          decoration: const InputDecoration(
-                            labelText: 'YYYY',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(4),
-                          ],
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Year required';
-                            int year = int.tryParse(value) ?? 0;
-                            if (year < DateTime.now().year) return 'Card expired';
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
+                  // Expiry Date Fields
+                  ExpiryDateInput(
+                    monthController: _expiryMonthController,
+                    yearController: _expiryYearController,
                   ),
                   const SizedBox(height: 16),
 
-                  TextFormField(
+                  // CVV Field
+                  CardInputField(
                     controller: _cvvController,
-                    decoration: const InputDecoration(
-                      labelText: 'CVV',
-                      prefixIcon: Icon(Icons.lock_outline),
-                      border: OutlineInputBorder(),
-                    ),
+                    labelText: 'CVV',
+                    prefixIcon: Icons.lock_outline,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
@@ -228,13 +183,11 @@ class _DetailsFormState extends ConsumerState<DetailsForm> {
                   ),
                   const SizedBox(height: 16),
 
-                  TextFormField(
+                  // Country Field
+                  CardInputField(
                     controller: _countryController,
-                    decoration: const InputDecoration(
-                      labelText: 'Issuing Country',
-                      prefixIcon: Icon(Icons.public),
-                      border: OutlineInputBorder(),
-                    ),
+                    labelText: 'Issuing Country',
+                    prefixIcon: Icons.public,
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Please enter issuing country';
                       if (isCountryBanned(value)) return 'Cards from this country are not accepted';
@@ -248,41 +201,21 @@ class _DetailsFormState extends ConsumerState<DetailsForm> {
 
           const SizedBox(height: 24),
 
+          // Action Buttons
           Row(
             children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _submitForm,
-                  icon: const Icon(Icons.save),
-                  label: const Text("Save"),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                  ),
-                ),
+              ActionButton(
+                onPressed: _submitForm,
+                label: "Save",
+                icon: Icons.save,
+                isPrimary: true,
               ),
               const SizedBox(width: 16),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    _formKey.currentState!.reset();
-                    _cardNumberController.clear();
-                    _cardTypeController.clear();
-                    _cvvController.clear();
-                    _countryController.clear();
-                    _cardHolderController.clear();
-                    _expiryMonthController.clear();
-                    _expiryYearController.clear();
-                  },
-                  icon: const Icon(Icons.restart_alt),
-                  label: const Text("Reset"),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: BorderSide(color: Theme.of(context).colorScheme.primary),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                  ),
-                ),
+              ActionButton(
+                onPressed: _resetForm,
+                label: "Reset",
+                icon: Icons.restart_alt,
+                isPrimary: false,
               ),
             ],
           ),
