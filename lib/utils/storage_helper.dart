@@ -76,35 +76,4 @@ class StorageHelper {
     return false;
   }
 
-static Future<String> _saveImageToStorage(File imageFile, String cardId, String side) async {
-  final Directory extDir = await getApplicationDocumentsDirectory();
-  final String dirPath = path.join(extDir.path, 'card_images', cardId);
-  await Directory(dirPath).create(recursive: true);
-  
-  final String filePath = path.join(dirPath, '$side${DateTime.now().millisecondsSinceEpoch}.jpg');
-  final File savedImage = await imageFile.copy(filePath);
-  
-  return savedImage.path;
-}
-
-static Future<void> saveCardWithImages(CreditCard card, {File? frontImage, File? backImage}) async {
-  String? frontImagePath;
-  String? backImagePath;
-
-  if (frontImage != null) {
-    frontImagePath = await _saveImageToStorage(frontImage, card.id, 'front');
-  }
-
-  if (backImage != null) {
-    backImagePath = await _saveImageToStorage(backImage, card.id, 'back');
-  }
-
-  final cardWithImages = card.copyWith(
-    frontImagePath: frontImagePath,
-    backImagePath: backImagePath,
-  );
-
-  await saveCard(cardWithImages);
-}
-
 }

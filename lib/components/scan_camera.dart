@@ -370,23 +370,30 @@ class _ScanCameraState extends State<ScanCamera> {
                 const Text('Processing...'),
                 const SizedBox(height: 30),
               ] else ...[
-                Column(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(
                       icon: const Icon(Icons.camera_alt),
-                      label: const Text('Scan with Camera'),
+                      label: const Text('Camera'),
                       onPressed: () => setState(() => _showScanner = true),
                       style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(200, 50),
+                        minimumSize: const Size(150, 50),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                        shape: RoundedRectangleBorder( borderRadius: BorderRadius.circular(6), ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(width: 16),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.photo_library),
-                      label: const Text('Select from Gallery'),
+                      label: const Text('Gallery'),
                       onPressed: () => _pickImage(ImageSource.gallery),
                       style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(200, 50),
+                        minimumSize: const Size(150, 50),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                        shape: RoundedRectangleBorder( borderRadius: BorderRadius.circular(6), ),
                       ),
                     ),
                     const SizedBox(height: 16),

@@ -23,7 +23,9 @@ class SavedCardsPage extends ConsumerWidget {
           if (cards.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: () { _showClearAllDialog(context, ref); },
+              onPressed: () {
+                _showClearAllDialog(context, ref);
+              },
             ),
         ],
       ),
@@ -35,26 +37,26 @@ class SavedCardsPage extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final card = cards[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric( horizontal: 16, vertical: 8,),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: ListTile(
-                      title: Text( '${card.cardType} •••• ${card.cardNumber.substring(card.cardNumber.length - 4)}', ),
+                      title: Text(
+                        '${card.cardType} •••• ${card.cardNumber.substring(card.cardNumber.length - 4)}',
+                      ),
                       subtitle: Text('Issuing Country: ${card.issuingCountry}'),
-                      leading: card.frontImagePath != null
-                        ? Image.file( File(card.frontImagePath!), width: 40, height: 40, fit: BoxFit.cover, )
-                        : const Icon(Icons.credit_card),
+                      leading: const Icon(Icons.credit_card),
+                      onTap: () => _showCardDetailsDialog(context, card),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (card.frontImagePath != null ||
-                              card.backImagePath != null)
-                            IconButton(
-                              icon: const Icon(Icons.photo_library),
-                              onPressed: () { _showCardImages(context, card); },
-                            ),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
-                              ref.read(creditCardsProvider.notifier).deleteCard(card.id);
+                              ref
+                                  .read(creditCardsProvider.notifier)
+                                  .deleteCard(card.id);
                             },
                           ),
                         ],
@@ -97,46 +99,74 @@ class SavedCardsPage extends ConsumerWidget {
     );
   }
 
-  void _showCardImages(BuildContext context, CreditCard card) {
+  void _showCardDetailsDialog(BuildContext context, CreditCard card) {
     showDialog(
       context: context,
       builder:
           (context) => Dialog(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AppBar(
-                  title: const Text('Card Images'),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  /// Top Row: Country + Card Type
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      if (card.frontImagePath != null) ...[
-                        const Text(
-                          'Front:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Image.file(File(card.frontImagePath!)),
-                        const SizedBox(height: 16),
-                      ],
-                      if (card.backImagePath != null) ...[
-                        const Text(
-                          'Back:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Image.file(File(card.backImagePath!)),
-                      ],
+                      Text(
+                        card.issuingCountry,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        card.cardType,
+                        style: const TextStyle(fontStyle: FontStyle.italic),
+                      ),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+
+                  /// Card Number (centered)
+                  Text(
+                    card.cardNumber,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      letterSpacing: 2.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+
+                  /// CVV + Expiry
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'CVV: ${card.cvv}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      Text(
+                        'Exp: ${card.expiryMonth}/${card.expiryYear}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  /// Card Holder
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      card.cardHolder,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
     );

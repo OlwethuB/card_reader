@@ -40,25 +40,6 @@ class CreditCardsNotifier extends StateNotifier<List<CreditCard>> {
   Future<bool> doesCardExist(String cardNumber) async {
     return await StorageHelper.doesCardExist(cardNumber);
   }
-
-  Future<void> addCardWithImages(
-  CreditCard card, {
-  File? frontImage,
-  File? backImage,
-}) async {
-  // Check for duplicates
-  final currentCards = await StorageHelper.getCards();
-  if (currentCards.any((existingCard) => existingCard.cardNumber == card.cardNumber)) {
-    return;
-  }
-
-  await StorageHelper.saveCardWithImages(
-    card,
-    frontImage: frontImage,
-    backImage: backImage,
-  );
-  await loadCards(); // reload from storage
-}
 }
 
 final creditCardsProvider = StateNotifierProvider<CreditCardsNotifier, List<CreditCard>>((ref) {

@@ -5,8 +5,6 @@ class CreditCard {
   final String cvv;
   final String issuingCountry;
   final DateTime createdAt;
-  final String? frontImagePath;
-  final String? backImagePath;
   final String cardHolder;
   final String expiryMonth;
   final String expiryYear;
@@ -21,8 +19,6 @@ class CreditCard {
     required this.cardHolder,
     required this.expiryMonth,
     required this.expiryYear,
-    this.frontImagePath,
-    this.backImagePath,
   });
 
   Map<String, dynamic> toMap() {
@@ -36,8 +32,6 @@ class CreditCard {
       'cardHolder': cardHolder,
       'expiryMonth': expiryMonth,
       'expiryYear': expiryYear,
-      'frontImagePath': frontImagePath,
-      'backImagePath': backImagePath,
     };
   }
 
@@ -52,8 +46,6 @@ class CreditCard {
       cardHolder: map['cardHolder'] ?? '', 
       expiryMonth: map['expiryMonth'] ?? '', 
       expiryYear: map['expiryYear'] ?? '', 
-      frontImagePath: map['frontImagePath'],
-      backImagePath: map['backImagePath'],
     );
   }
 
@@ -67,8 +59,6 @@ class CreditCard {
     String? cardHolder,
     String? expiryMonth,
     String? expiryYear,
-    String? frontImagePath,
-    String? backImagePath,
   }) {
     return CreditCard(
       id: id ?? this.id, 
@@ -80,8 +70,6 @@ class CreditCard {
       cardHolder: cardHolder ?? this.cardHolder, 
       expiryMonth: expiryMonth ?? this.expiryMonth, 
       expiryYear: expiryYear ?? this.expiryYear, 
-      frontImagePath: frontImagePath ?? this.frontImagePath,
-      backImagePath: backImagePath ?? this.backImagePath,
     );
   }
 }
