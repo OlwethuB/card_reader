@@ -3,6 +3,7 @@ import 'package:card_reader/components/scan_camera.dart';
 import 'package:card_reader/models/credit_card.dart';
 import 'package:card_reader/providers/credit_card_provider.dart';
 import 'package:card_reader/screens/saved_cards_page.dart';
+import 'package:card_reader/utils/card_utils.dart';
 import 'package:card_reader/utils/country_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -41,9 +42,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           .doesCardExist(cardNumber);
       if (cardExists) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('This card has already been saved')),
-          );
+          showCardExistsDialog(context);
         }
         return;
       }
@@ -51,9 +50,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       // Check if country is banned
       if (isCountryBanned(country)) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Cards from $country are not accepted')),
-          );
+          showCountryDeniedDialog(context, country);
         }
         return;
       }
@@ -118,16 +115,16 @@ class _HomePageState extends ConsumerState<HomePage> {
               Tab(icon: Icon(Icons.edit), text: "Manual Entry"),
               Tab(icon: Icon(Icons.camera_alt), text: "Scan Card"),
             ],
-          ), // TabBar
-        ), // AppBar
+          ), 
+        ), 
 
         body: TabBarView(
           children: [
             DetailsForm(), // The Details form
             ScanCamera(onCardScanned: _handleScannedCard), // The Camera scan
           ],
-        ), // TabBarView
-      ), // Scaffold
+        ),
+      ), 
     );
   }
 }

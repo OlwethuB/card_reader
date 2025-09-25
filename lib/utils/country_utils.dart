@@ -1,6 +1,9 @@
 bool isCountryBanned(String country) {
-  return bannedCountries.contains(country);
+  return bannedCountries
+      .map((c) => c.toLowerCase())
+      .contains(country.toLowerCase());
 }
+
 
 final List<String> bannedCountries = [
   'Syria',
@@ -11,6 +14,8 @@ final List<String> bannedCountries = [
   'Sudan',
   'Cuba',
   'Ukraine',
+  'Myanmar',
+  'Burma',
 ];
 
 

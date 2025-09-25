@@ -77,3 +77,19 @@ void showCardExistsDialog(BuildContext context) {
     ),
   );
 }
+
+void showCountryDeniedDialog(BuildContext context, String country) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Card Country is not accepted.'),
+      content: Text('Cards from $country are not accepted'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
+  );
+}

@@ -1,15 +1,14 @@
 import 'dart:io';
 import 'package:card_reader/components/card_preview.dart';
-import 'package:card_reader/components/card_scanner.dart';
 import 'package:card_reader/utils/card_utils.dart';
-import 'package:card_reader/utils/ocr_utils.dart'; // NEW IMPORT
+import 'package:card_reader/utils/ocr_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ScanCamera extends StatefulWidget {
   final Function(Map<String, dynamic>)? onCardScanned;
-  
+
   const ScanCamera({super.key, this.onCardScanned});
 
   @override
@@ -21,12 +20,11 @@ class _ScanCameraState extends State<ScanCamera> {
   String? _scannedCardNumber;
   String? _scannedCardType;
   String? _fullScannedText;
-  String? _scannedCVV; // NEW FIELD
-  String? _scannedExpiryMonth; // NEW FIELD
-  String? _scannedExpiryYear; // NEW FIELD
-  String? _scannedCardHolder; // NEW FIELD
+  String? _scannedCVV;
+  String? _scannedExpiryMonth;
+  String? _scannedExpiryYear;
+  String? _scannedCardHolder;
   final ImagePicker _picker = ImagePicker();
-  bool _showScanner = false;
   bool _isProcessing = false;
 
   Future<void> _pickImage(ImageSource source) async {
@@ -36,7 +34,7 @@ class _ScanCameraState extends State<ScanCamera> {
         _scannedCardNumber = null;
         _scannedCardType = null;
         _fullScannedText = null;
-        _scannedCVV = null; // RESET NEW FIELDS
+        _scannedCVV = null;
         _scannedExpiryMonth = null;
         _scannedExpiryYear = null;
         _scannedCardHolder = null;
@@ -57,9 +55,9 @@ class _ScanCameraState extends State<ScanCamera> {
     } catch (e) {
       debugPrint("Image pick error: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error picking image')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Error picking image')));
       }
     } finally {
       if (mounted) {
@@ -78,16 +76,18 @@ class _ScanCameraState extends State<ScanCamera> {
 
       final textRecognizer = TextRecognizer();
       final inputImage = InputImage.fromFile(imageFile);
-      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+      final RecognizedText recognizedText = await textRecognizer.processImage(
+        inputImage,
+      );
 
       String fullText = recognizedText.text;
-      
+
       // Use OcrUtils for all extractions (no duplication)
       String cardNumber = OcrUtils.extractCardNumber(fullText);
       String cvv = OcrUtils.extractCVV(fullText);
       Map<String, String> expiryDate = OcrUtils.extractExpiryDate(fullText);
       String cardHolder = OcrUtils.extractCardHolder(fullText);
-      
+
       debugPrint("Full OCR Text: $fullText");
       debugPrint("Extracted Card Number: $cardNumber");
       debugPrint("Extracted CVV: $cvv");
@@ -98,8 +98,9 @@ class _ScanCameraState extends State<ScanCamera> {
         setState(() {
           _fullScannedText = fullText;
           _scannedCardNumber = cardNumber;
-          _scannedCardType = cardNumber.isNotEmpty ? getCardType(cardNumber) : 'Unknown';
-          _scannedCVV = cvv; // SET NEW FIELDS
+          _scannedCardType =
+              cardNumber.isNotEmpty ? getCardType(cardNumber) : 'Unknown';
+          _scannedCVV = cvv;
           _scannedExpiryMonth = expiryDate['month'];
           _scannedExpiryYear = expiryDate['year'];
           _scannedCardHolder = cardHolder;
@@ -110,7 +111,9 @@ class _ScanCameraState extends State<ScanCamera> {
       if (cardNumber.isEmpty && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('No card number detected. Try a clearer image.'),
+            content: const Text(
+              'No card number detected. Try a clearer image.',
+            ),
             action: SnackBarAction(
               label: 'View OCR',
               onPressed: () => _showOcrResults(fullText),
@@ -126,9 +129,9 @@ class _ScanCameraState extends State<ScanCamera> {
         setState(() {
           _isProcessing = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error processing image')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Error processing image')));
       }
     }
   }
@@ -136,39 +139,18 @@ class _ScanCameraState extends State<ScanCamera> {
   void _showOcrResults(String fullText) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Full OCR Results'),
-        content: SingleChildScrollView(
-          child: Text(fullText),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Full OCR Results'),
+            content: SingleChildScrollView(child: Text(fullText)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
-  }
-
-  void _handleCardScanned(String cardNumber, String fullText) {
-    if (mounted) {
-      // Extract all details when using camera scanner
-      String cvv = OcrUtils.extractCVV(fullText);
-      Map<String, String> expiryDate = OcrUtils.extractExpiryDate(fullText);
-      String cardHolder = OcrUtils.extractCardHolder(fullText);
-      
-      setState(() {
-        _scannedCardNumber = cardNumber;
-        _scannedCardType = getCardType(cardNumber);
-        _fullScannedText = fullText;
-        _scannedCVV = cvv;
-        _scannedExpiryMonth = expiryDate['month'];
-        _scannedExpiryYear = expiryDate['year'];
-        _scannedCardHolder = cardHolder;
-        _showScanner = false;
-      });
-    }
   }
 
   void _resetScan() {
@@ -177,59 +159,42 @@ class _ScanCameraState extends State<ScanCamera> {
       _scannedCardType = null;
       _imageFile = null;
       _fullScannedText = null;
-      _scannedCVV = null; // RESET NEW FIELDS
+      _scannedCVV = null;
       _scannedExpiryMonth = null;
       _scannedExpiryYear = null;
       _scannedCardHolder = null;
-      _showScanner = false;
     });
   }
 
-  void _handleSave(String country, String cvv, String expiryMonth, String expiryYear, String cardHolder) {
+  void _handleSave(
+    String country,
+    String cvv,
+    String expiryMonth,
+    String expiryYear,
+    String cardHolder,
+  ) {
     if (_scannedCardNumber != null && widget.onCardScanned != null) {
       widget.onCardScanned!({
         'cardNumber': _scannedCardNumber!,
         'cardType': _scannedCardType!,
         'country': country,
         'cvv': cvv,
-        'expiryMonth': expiryMonth, // NEW FIELD
-        'expiryYear': expiryYear, // NEW FIELD
-        'cardHolder': cardHolder, // NEW FIELD
+        'expiryMonth': expiryMonth,
+        'expiryYear': expiryYear,
+        'cardHolder': cardHolder,
       });
     }
-    
+
     _resetScan();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_showScanner) {
-      return Stack(
-        children: [
-          CardScanner(onCardScanned: _handleCardScanned),
-          Positioned(
-            top: 20,
-            left: 0,
-            right: 0,
-            child: Container(
-              color: Colors.black54,
-              padding: const EdgeInsets.all(8),
-              child: const Text(
-                'Point camera at credit card. Ensure good lighting.',
-                style: TextStyle(color: Colors.white),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
     if (_scannedCardNumber != null) {
       return CardPreview(
         cardNumber: _scannedCardNumber!,
         cardType: _scannedCardType!,
-        cvv: _scannedCVV ?? '', // PASS NEW FIELDS
+        cvv: _scannedCVV ?? '',
         expiryMonth: _scannedExpiryMonth ?? '',
         expiryYear: _scannedExpiryYear ?? '',
         cardHolder: _scannedCardHolder ?? '',
@@ -246,14 +211,14 @@ class _ScanCameraState extends State<ScanCamera> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                'Select a card to scan from the gallery',
-                // 'Scan credit card using camera or select from gallery',
+                // 'Select a card to scan from the gallery',
+                'Scan credit card using camera or select from gallery',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 30),
-              
-              // Display selected image with OCR results
+
+              // selected image with OCR results
               if (_imageFile != null) ...[
                 Card(
                   elevation: 4,
@@ -306,35 +271,50 @@ class _ScanCameraState extends State<ScanCamera> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: _scannedCardNumber != null ? Colors.green : Colors.red,
+                                  color:
+                                      _scannedCardNumber != null
+                                          ? Colors.green
+                                          : Colors.red,
                                 ),
                               ),
                               if (_scannedCardNumber != null) ...[
                                 const SizedBox(height: 8),
                                 Text(
                                   'Card Type: $_scannedCardType',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                               if (_scannedCVV?.isNotEmpty ?? false) ...[
                                 const SizedBox(height: 8),
                                 Text(
                                   'CVV: $_scannedCVV',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                               if (_scannedExpiryMonth?.isNotEmpty ?? false) ...[
                                 const SizedBox(height: 8),
                                 Text(
                                   'Expiry: ${_scannedExpiryMonth}/${_scannedExpiryYear}',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                               if (_scannedCardHolder?.isNotEmpty ?? false) ...[
                                 const SizedBox(height: 8),
                                 Text(
                                   'Card Holder: $_scannedCardHolder',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ],
@@ -374,17 +354,19 @@ class _ScanCameraState extends State<ScanCamera> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // ElevatedButton.icon(
-                    //   icon: const Icon(Icons.camera_alt),
-                    //   label: const Text('Camera'),
-                    //   onPressed: () => setState(() => _showScanner = true),
-                    //   style: ElevatedButton.styleFrom(
-                    //     minimumSize: const Size(150, 50),
-                    //     padding: const EdgeInsets.symmetric(vertical: 16),
-                    //     textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                    //     shape: RoundedRectangleBorder( borderRadius: BorderRadius.circular(6), ),
-                    //   ),
-                    // ),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.camera_alt),
+                      label: const Text('Camera'),
+                      onPressed: () => _pickImage(ImageSource.camera),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(150, 50),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 16),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.photo_library),
@@ -394,7 +376,9 @@ class _ScanCameraState extends State<ScanCamera> {
                         minimumSize: const Size(150, 50),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                        shape: RoundedRectangleBorder( borderRadius: BorderRadius.circular(6), ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -408,7 +392,8 @@ class _ScanCameraState extends State<ScanCamera> {
                           minimumSize: const Size(200, 50),
                         ),
                       ),
-                    if (_fullScannedText != null && _scannedCardNumber == null) ...[
+                    if (_fullScannedText != null &&
+                        _scannedCardNumber == null) ...[
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.info),
@@ -432,11 +417,11 @@ class _ScanCameraState extends State<ScanCamera> {
 
   void _manualEntryFromOcr() {
     if (_fullScannedText == null) return;
-    
-    // Extract potential card numbers from OCR text
+
+    // OCR text
     String allDigits = _fullScannedText!.replaceAll(RegExp(r'\D'), '');
     List<String> potentialNumbers = [];
-    
+
     // Look for sequences of 13-19 digits
     for (int i = 0; i <= allDigits.length - 13; i++) {
       for (int length = 13; length <= 19; length++) {
@@ -445,48 +430,54 @@ class _ScanCameraState extends State<ScanCamera> {
         }
       }
     }
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Card Number'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: potentialNumbers.length,
-            itemBuilder: (context, index) {
-              String number = potentialNumbers[index];
-              return ListTile(
-                title: Text(number),
-                subtitle: Text('${number.length} digits - ${getCardType(number)}'),
-                onTap: () {
-                  // Extract other details when user selects a card number
-                  String cvv = OcrUtils.extractCVV(_fullScannedText!);
-                  Map<String, String> expiryDate = OcrUtils.extractExpiryDate(_fullScannedText!);
-                  String cardHolder = OcrUtils.extractCardHolder(_fullScannedText!);
-                  
-                  setState(() {
-                    _scannedCardNumber = number;
-                    _scannedCardType = getCardType(number);
-                    _scannedCVV = cvv;
-                    _scannedExpiryMonth = expiryDate['month'];
-                    _scannedExpiryYear = expiryDate['year'];
-                    _scannedCardHolder = cardHolder;
-                  });
-                  Navigator.pop(context);
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Select Card Number'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: potentialNumbers.length,
+                itemBuilder: (context, index) {
+                  String number = potentialNumbers[index];
+                  return ListTile(
+                    title: Text(number),
+                    subtitle: Text(
+                      '${number.length} digits - ${getCardType(number)}',
+                    ),
+                    onTap: () {
+                      // Extract other details when user selects a card number
+                      String cvv = OcrUtils.extractCVV(_fullScannedText!);
+                      Map<String, String> expiryDate =
+                          OcrUtils.extractExpiryDate(_fullScannedText!);
+                      String cardHolder = OcrUtils.extractCardHolder(
+                        _fullScannedText!,
+                      );
+
+                      setState(() {
+                        _scannedCardNumber = number;
+                        _scannedCardType = getCardType(number);
+                        _scannedCVV = cvv;
+                        _scannedExpiryMonth = expiryDate['month'];
+                        _scannedExpiryYear = expiryDate['year'];
+                        _scannedCardHolder = cardHolder;
+                      });
+                      Navigator.pop(context);
+                    },
+                  );
                 },
-              );
-            },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
     );
   }
 }

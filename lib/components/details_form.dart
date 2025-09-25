@@ -45,9 +45,7 @@ class _DetailsFormState extends ConsumerState<DetailsForm> {
       final expiryYear = _expiryYearController.text;
 
       if (isCountryBanned(country)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cards from $country are not accepted')),
-        );
+        showCountryDeniedDialog(context, country);
         return;
       }
 
@@ -60,9 +58,7 @@ class _DetailsFormState extends ConsumerState<DetailsForm> {
 
       final cardExists = await ref.read(creditCardsProvider.notifier).doesCardExist(cardNumber);
       if (cardExists) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('This card has already been saved')),
-        );
+        showCardExistsDialog(context);
         return;
       }
 
